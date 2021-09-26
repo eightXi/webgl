@@ -9,10 +9,7 @@ body {
     height: 100%;
 }
 
-#lighterWall {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0
+#glcanvas {
+    width: 640px;
+    height: 480px;
 }
