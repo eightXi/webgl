@@ -10,6 +10,9 @@ var program = createProgram(gl, vs, fs); // 创建程序对象
 var a_Position = gl.getAttribLocation(program, 'a_Position') //获取attribute变量的存储位置
 gl.vertexAttrib3f(a_Position, 0.0, 0.0, 0.0); //向attribute变量赋值
 
+var a_PointSize = gl.getAttribLocation(program, 'a_PointSize');
+gl.vertexAttrib1f(a_PointSize, 10.0);
+
 
 gl.clearColor(0.0, 0.0, 0.0, 1.0);
 gl.clear(gl.COLOR_BUFFER_BIT);
