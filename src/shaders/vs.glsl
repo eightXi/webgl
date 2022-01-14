@@ -1,8 +1,8 @@
-precision mediump float;
-attribute vec4 a_Position;
-attribute float a_PointSize;
+attribute vec4 aVertexPosition;
 
-void main(){
-    gl_Position = a_Position;
-    gl_PointSize = a_PointSize;
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
+
+void main() {
+    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
 }

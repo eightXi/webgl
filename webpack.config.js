@@ -39,7 +39,7 @@ module.exports = {
         historyApiFallback: false,
         noInfo: true,
         compress: true,
-        hot: true
+        hot: true,
     },
     devtool: '#source-map',
     plugins: [
@@ -47,13 +47,6 @@ module.exports = {
         new webpack.LoaderOptionsPlugin({
             test: /\.js$/,
             options: { minimize: true }
-        }),
-        new webpack.optimize.UglifyJsPlugin({
-            sourceMap: true,
-            comments: false,
-            compress: {
-                warnings: false
-            }
         }),
     ],
 }
