@@ -1,12 +1,28 @@
 var path = require('path');
 var webpack = require('webpack');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var HtmlWebpackPlugin = require('html-webpack-plugin');
+
+const entry = ['chapter2', 'chapter3']
+const entryData = {};
+const HtmlWebpackPluginData = [];
+entry.forEach(function (item) {
+    HtmlWebpackPluginData.push(
+        new HtmlWebpackPlugin({
+            filename: `${item}.html`,
+            template: path.join(__dirname, `./src/pages/${item}/index.html`),
+            chunks: [item]
+        })
+    );
+    entryData[item] = path.join(__dirname, `./src/pages/${item}/index.js`);
+})  
 module.exports = {
-    entry: './src/index.js',
+    mode: 'development',
+    entry: { ...entryData },
     output: {
-        path: path.join(__dirname, '/dist/'),
-        publicPath: '/dist/',
-        filename: '[name].js'
+        filename: 'public/[name].js',
+        path: path.join(__dirname, `./dist/`),
+        publicPath: '/'
     },
     module: {
         rules: [{
@@ -16,7 +32,7 @@ module.exports = {
         }, {
             test: /\.css$/,
             loader: ExtractTextPlugin.extract({
-                fallbackLoader: 'style-loader',
+                fallback: 'style-loader',
                 use: ['css-loader', 'postcss-loader']
             })
         }, {
@@ -39,21 +55,10 @@ module.exports = {
         historyApiFallback: false,
         noInfo: true,
         compress: true,
-        hot: true
+        hot: true,
     },
     devtool: '#source-map',
     plugins: [
-        new ExtractTextPlugin("[name].css"),
-        new webpack.LoaderOptionsPlugin({
-            test: /\.js$/,
-            options: { minimize: true }
-        }),
-        new webpack.optimize.UglifyJsPlugin({
-            sourceMap: true,
-            comments: false,
-            compress: {
-                warnings: false
-            }
-        }),
-    ],
+        ...HtmlWebpackPluginData
+    ]
 }
