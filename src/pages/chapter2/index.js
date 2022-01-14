@@ -1,6 +1,6 @@
 import vs from './shaders/vs.glsl';
 import fs from './shaders/fs.glsl';
-import {mat4} from '../lib/glmatrix';
+import {mat4} from '../../../lib/glmatrix';
 
 var cvs = document.querySelector("#glcanvas");
 var gl = cvs.getContext('webgl') || cvs.getContext('experimental-webgl');
