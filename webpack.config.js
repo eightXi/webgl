@@ -3,7 +3,7 @@ var webpack = require('webpack');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 
-const entry = ['chapter2', 'chapter3']
+const entry = ['chapter2', 'chapter3', 'chapter4']
 const entryData = {};
 const HtmlWebpackPluginData = [];
 entry.forEach(function (item) {
