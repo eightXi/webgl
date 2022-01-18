@@ -8,6 +8,7 @@ import {
 } from './shaderArray';
 
 const image = require('./image.png');
+// const image = require('./noodles.jpg');
 
 var cvs = document.querySelector("#glcanvas");
 var gl = cvs.getContext('webgl') || cvs.getContext('experimental-webgl');
@@ -179,7 +180,7 @@ function drawScene(gl, programInfo, buffers, deltaTime, texture) {
     }
 
     {
-        const numComponents = 2;  // 每次迭代提取4个值
+        const numComponents = 2;  // 每次迭代提取2个值
         const type = gl.FLOAT;    // 32位浮点数
         const normalize = false;  // 不需要归一化数据
         const stride = 0;         // 每次迭代运行运动多少内存到下一个数据开始点
