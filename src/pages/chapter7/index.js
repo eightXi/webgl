@@ -3,6 +3,7 @@ import fs from './shaders/fs.glsl';
 import {mat4} from '../../../lib/glmatrix';
 import {
     vertices,
+    vertexNormals,
     textureCoordinates,
     indexes
 } from './shaderArray';
@@ -22,7 +23,9 @@ const programInfo = {
     },
     uniformLocations: {
       projectionMatrix: gl.getUniformLocation(program, 'uProjectionMatrix'),
-      modelViewMatrix: gl.getUniformLocation(program, 'uModelViewMatrix'),
+      viewMatrix: gl.getUniformLocation(program, 'uViewMatrix'),
+      modelMatrix: gl.getUniformLocation(program, 'uModelMatrix'),
+      normalMatrix: gl.getUniformLocation(program, 'uNormalMatrix'),
       uSampler: gl.getUniformLocation(program, 'uSampler'),
     }
 };
@@ -69,10 +72,19 @@ function initBuffers(gl) {
         gl.STATIC_DRAW
     );
 
+    const normalBuffer = gl.createBuffer();
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, 
+        new Float32Array(vertexNormals),
+        gl.STATIC_DRAW
+    )
+
     return {
         position: positionBuffer,
         textureCoord: textureBuffer,
-        index: indexBuffer
+        index: indexBuffer,
+        normal: normalBuffer,
     };
 }
 
@@ -137,26 +149,37 @@ function drawScene(gl, programInfo, buffers, deltaTime, texture) {
     const zNear = 0.1;
     const zFar = 100.0;
     const projectionMatrix = mat4.create();
-  
     mat4.perspective(projectionMatrix,
                      fieldOfView,
                      aspect,
                      zNear,
                      zFar);
   
-    // 把绘制的位置设置为场景的中心
-    const modelViewMatrix = mat4.create();
-  
-    // 将绘制位置移动到我们想要开始绘制正方形的位置。
-  
-    mat4.translate(modelViewMatrix,     // 用给定的向量平移
-                   modelViewMatrix,     
-                   [0.0, 0.0, -6.0]);  // 距离相机单位
+    // 创建视图矩阵
+    const viewMatrix = mat4.create();
+    const eye = [0, 0, 6];   //虚拟摄像机位置
+    const center = [0, 0, 0]; // 被观察目标所在的点 还可用来确定视线
+    const up = [0, -1, 0]; // 摄像机朝上的位置
 
-    mat4.rotate(modelViewMatrix,  
-              modelViewMatrix,  
-              squareRotation,   
-              [1, 1, 0]);       // 旋转所绕的轴
+    mat4.lookAt(viewMatrix,
+        eye,
+        center,
+        up)
+
+    // 创建模型矩阵
+    const modelMatrix = mat4.create();
+    
+    mat4.identity(modelMatrix); // 创建单位矩阵
+    mat4.rotate(modelMatrix,    // 绕对应的轴进行旋转
+        modelMatrix,  
+        squareRotation,   
+        [1, 1, 1]); 
+
+    
+
+    const normalMatrix = mat4.create();
+    mat4.invert(normalMatrix, viewMatrix);
+    mat4.transpose(normalMatrix, normalMatrix);
   
     // 从位置缓冲区中提取位置到vertexPosition属性中。
     {
@@ -197,6 +220,18 @@ function drawScene(gl, programInfo, buffers, deltaTime, texture) {
             programInfo.attribLocations.textureCoord);
     }
 
+    {
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normalBuffer);
+        gl.vertexAttribPointer(
+            programInfo.attribLocations.vertexNormal,
+            3, 
+            gl.FLOAT, 
+            false, 
+            0, 
+            0
+        );
+    }
+
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index) // 绑定索引缓存区
 
     gl.useProgram(programInfo.program);
@@ -208,9 +243,17 @@ function drawScene(gl, programInfo, buffers, deltaTime, texture) {
         false,
         projectionMatrix);
     gl.uniformMatrix4fv(
-        programInfo.uniformLocations.modelViewMatrix,
+        programInfo.uniformLocations.viewMatrix,
         false,   //  是否转置矩阵，必须为false
-        modelViewMatrix);
+        viewMatrix);
+    gl.uniformMatrix4fv(
+        programInfo.uniformLocations.modelMatrix,
+        false,   //  是否转置矩阵，必须为false
+        modelMatrix);
+    gl.uniformMatrix4fv(
+        programInfo.uniformLocations.normalMatrix,
+        false,
+        normalMatrix);
 
     // 激活并绑定纹理单元
 

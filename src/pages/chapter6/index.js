@@ -23,7 +23,8 @@ const programInfo = {
     },
     uniformLocations: {
       projectionMatrix: gl.getUniformLocation(program, 'uProjectionMatrix'),
-      modelViewMatrix: gl.getUniformLocation(program, 'uModelViewMatrix'),
+      viewMatrix: gl.getUniformLocation(program, 'uViewMatrix'),
+      modelMatrix: gl.getUniformLocation(program, 'uModelMatrix'),
       uSampler: gl.getUniformLocation(program, 'uSampler'),
     }
 };
@@ -145,20 +146,27 @@ function drawScene(gl, programInfo, buffers, deltaTime, texture) {
                      zNear,
                      zFar);
   
-    // 把绘制的位置设置为场景的中心
-    const modelViewMatrix = mat4.create();
-  
-    // 将绘制位置移动到我们想要开始绘制正方形的位置。
-  
-    mat4.translate(modelViewMatrix,     // 用给定的向量平移
-                   modelViewMatrix,     
-                   [0.0, 0.0, -6.0]);  // 距离相机单位
+    // 创建视图矩阵
+    const viewMatrix = mat4.create();
+    const eye = [0, 0, 6];   //虚拟摄像机位置
+    const center = [0, 0, 0]; // 被观察目标所在的点 还可用来确定视线
+    const up = [0, -1, 0]; // 摄像机朝上的位置
 
-    mat4.rotate(modelViewMatrix,  
-              modelViewMatrix,  
-              squareRotation,   
-              [1, 1, 0]);       // 旋转所绕的轴
-  
+    mat4.lookAt(viewMatrix,
+        eye,
+        center,
+        up)
+
+    // 创建模型矩阵
+    const modelMatrix = mat4.create();
+    
+    mat4.identity(modelMatrix); // 创建单位矩阵
+    mat4.rotate(modelMatrix,    // 绕对应的轴进行旋转
+        modelMatrix,  
+        squareRotation,   
+        [1, 1, 1]); 
+
+    
     // 从位置缓冲区中提取位置到vertexPosition属性中。
     {
       const numComponents = 3;  // 每次迭代提取3个值
@@ -209,9 +217,13 @@ function drawScene(gl, programInfo, buffers, deltaTime, texture) {
         false,
         projectionMatrix);
     gl.uniformMatrix4fv(
-        programInfo.uniformLocations.modelViewMatrix,
+        programInfo.uniformLocations.viewMatrix,
         false,   //  是否转置矩阵，必须为false
-        modelViewMatrix);
+        viewMatrix);
+    gl.uniformMatrix4fv(
+        programInfo.uniformLocations.modelMatrix,
+        false,   //  是否转置矩阵，必须为false
+        modelMatrix);
 
     // 激活并绑定纹理单元
 
