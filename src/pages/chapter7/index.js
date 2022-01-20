@@ -8,6 +8,7 @@ import {
     indexes
 } from './shaderArray';
 
+// const image = require('./noodles.jpg');
 const image = require('./image.png');
 
 var cvs = document.querySelector("#glcanvas");
@@ -34,15 +35,11 @@ const programInfo = {
 const buffers = initBuffers(gl); 
 const texture = loadTexture(gl, image);
 
-var squareRotation = 0.0; 
-var then = 0;
+var squareRotation = [0.0, 0.0]; 
 
-function render(now) {
-    now *= 0.001;  // 转换为秒
-    const deltaTime = now - then;
-    then = now;
-
-    drawScene(gl, programInfo, buffers, deltaTime, texture);
+initEventHandlers(cvs, squareRotation)
+function render() {
+    drawScene(gl, programInfo, buffers, texture);
 
     requestAnimationFrame(render);
 }
@@ -131,7 +128,7 @@ function isPowerOf2(value) {
     return (value & (value - 1)) == 0;
 }
 
-function drawScene(gl, programInfo, buffers, deltaTime, texture) {
+function drawScene(gl, programInfo, buffers, texture) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);  // 清除背景色为黑色
     gl.clearDepth(1.0);                 // 深度清除
     gl.enable(gl.DEPTH_TEST);           // 激活深度比较，并且更新深度缓冲区
@@ -173,8 +170,12 @@ function drawScene(gl, programInfo, buffers, deltaTime, texture) {
     mat4.identity(modelMatrix); // 创建单位矩阵
     mat4.rotate(modelMatrix,    // 绕对应的轴进行旋转
         modelMatrix,  
-        squareRotation,   
-        [1, 1, 1]); 
+        squareRotation[0],   
+        [1, 0, 0]); 
+    mat4.rotate(modelMatrix,    // 绕对应的轴进行旋转
+        modelMatrix,  
+        squareRotation[1],   
+        [0, 1, 0]); 
 
     // 创建光线法向量变换矩阵
     const normalMatrix = mat4.create();
@@ -273,9 +274,7 @@ function drawScene(gl, programInfo, buffers, deltaTime, texture) {
       const type = gl.UNSIGNED_SHORT; // 类型
       gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);  // 三角带，需要控制点位置顺序
     }
-
-    squareRotation += deltaTime;  // 更新旋转角度
-  }
+}
 
 // 创建着色器
 function createShader(webgl, source, type) { // 渲染上下文，数据源，着色器类型
@@ -295,3 +294,32 @@ function createProgram(gl, vs, fs) {
 
     return program;
 } 
+
+function initEventHandlers(canvas, currentAngle) {
+  var dragging = false; //默认鼠标拖动不旋转物体
+  var lastX = -1, lastY = -1; //鼠标最后的位置
+
+  canvas.onmousedown = function (ev) { //注册鼠标按下事件
+    lastX = ev.clientX;
+    lastY = ev.clientY;
+    dragging = true;
+  }
+
+  //鼠标松开拖动结束
+  canvas.onmouseup = function (ev) {
+    dragging = false;
+  }
+
+  canvas.onmousemove = function (ev) { //注册鼠标移动事件
+    var x = ev.clientX, y = ev.clientY;
+    if (dragging) {
+      var factor = 5 / canvas.height; //旋转因子
+      var dx = factor * (x - lastX);
+      var dy = factor * (y - lastY);
+      //沿Y轴的旋转角度控制在-90到90度之间
+      currentAngle[0] = Math.max(Math.min(currentAngle[0] + dy, 90.0), -90.0)
+      currentAngle[1] = currentAngle[1] + dx
+    }
+    lastX = x, lastY = y
+  }
+}
