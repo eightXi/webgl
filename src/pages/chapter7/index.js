@@ -19,7 +19,8 @@ const programInfo = {
     program,
     attribLocations: {
       vertexPosition: gl.getAttribLocation(program, 'aVertexPosition'),
-      textureCoord: gl.getAttribLocation(program, 'aTextureCoord')
+      textureCoord: gl.getAttribLocation(program, 'aTextureCoord'),
+      vertexNormal: gl.getAttribLocation(program, 'aVertexNormal')
     },
     uniformLocations: {
       projectionMatrix: gl.getUniformLocation(program, 'uProjectionMatrix'),
@@ -175,11 +176,10 @@ function drawScene(gl, programInfo, buffers, deltaTime, texture) {
         squareRotation,   
         [1, 1, 1]); 
 
-    
-
+    // 创建光线法向量变换矩阵
     const normalMatrix = mat4.create();
-    mat4.invert(normalMatrix, viewMatrix);
-    mat4.transpose(normalMatrix, normalMatrix);
+    mat4.invert(normalMatrix, modelMatrix); //创建模型矩阵逆矩阵 
+    mat4.transpose(modelMatrix, modelMatrix); // 转置
   
     // 从位置缓冲区中提取位置到vertexPosition属性中。
     {
@@ -221,7 +221,7 @@ function drawScene(gl, programInfo, buffers, deltaTime, texture) {
     }
 
     {
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normalBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
         gl.vertexAttribPointer(
             programInfo.attribLocations.vertexNormal,
             3, 
@@ -230,6 +230,8 @@ function drawScene(gl, programInfo, buffers, deltaTime, texture) {
             0, 
             0
         );
+        gl.enableVertexAttribArray(  // 打开属性数组列表中指定索引处的通用顶点属性数组
+            programInfo.attribLocations.vertexNormal);
     }
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index) // 绑定索引缓存区
