@@ -136,6 +136,41 @@ WebGL在GPU上的工作基本上分为两部分，第一部分是将顶点转换
 
 引入投影矩阵、视图矩阵、模型矩阵3个概念进行3d真实场景模拟，通过在Vertex Shader中使用透视矩阵 * 视图矩阵 * 模型矩阵 * 顶点得出最终的顶点位置。
 
+- 模型矩阵
+
+  模型矩阵，顾名思义，就是顶点本身的变换矩阵，包括平移，缩放，旋转等
+
+  ```
+  // 创建模型矩阵
+  const modelMatrix = mat4.create();
+
+  mat4.identity(modelMatrix); // 创建单位矩阵
+  mat4.rotate(modelMatrix,    // 绕对应的轴进行旋转
+  modelMatrix,  
+  squareRotation,   
+  [1, 0, 1]); 
+  ```
+
+
+- 视图矩阵
+
+  创建视图矩阵模拟摄像机
+
+  在投影矩阵中我们设定视点在（0，0，0）点，所以我们需要在顶点交给投影矩阵处理之前，通过视图矩阵将顶点坐标转换到视点是（0，0，0）点的坐标系中。
+
+  ```
+  // 创建视图矩阵
+  const viewMatrix = mat4.create();
+  const eye = [0, 0, 6];   //虚拟摄像机位置
+  const center = [0, 0, 0]; // 被观察目标所在的点 还可用来确定视线
+  const up = [0, 1, 0]; // 摄像机朝上的位置 确定视线所在的面
+
+  mat4.lookAt(viewMatrix,
+      eye,
+      center,
+      up)
+  ```
+
 - 投影矩阵
 
   投影矩阵的作用是将图像从3D空间投影到2D空间，主要有2种投影方式，透视（Perspective）和 正交（Orthogonal）。它们的区别主要在于顶点在z轴上的远近是否会影响其在xy平面上投影的位置。正交的应用场合一般来说是2D UI渲染，透视则应用于3D物体渲染，通过透视投影可以形成远小近大的真实世界视觉效果
@@ -166,39 +201,6 @@ WebGL在GPU上的工作基本上分为两部分，第一部分是将顶点转换
                     aspect,
                     zNear,
                     zFar);
-  ```
-- 视图矩阵
-
-  创建视图矩阵模拟摄像机
-
-  在投影矩阵中我们设定视点在（0，0，0）点，所以我们需要在顶点交给投影矩阵处理之前，通过视图矩阵将顶点坐标转换到视点是（0，0，0）点的坐标系中。
-
-  ```
-  // 创建视图矩阵
-  const viewMatrix = mat4.create();
-  const eye = [0, 0, 6];   //虚拟摄像机位置
-  const center = [0, 0, 0]; // 被观察目标所在的点 还可用来确定视线
-  const up = [0, 1, 0]; // 摄像机朝上的位置
-
-  mat4.lookAt(viewMatrix,
-      eye,
-      center,
-      up)
-  ```
-
-- 模型矩阵
-
-  模型矩阵，顾名思义，就是顶点本身的变换矩阵，包括平移，缩放，旋转等
-
-  ```
-  // 创建模型矩阵
-  const modelMatrix = mat4.create();
-
-  mat4.identity(modelMatrix); // 创建单位矩阵
-  mat4.rotate(modelMatrix,    // 绕对应的轴进行旋转
-  modelMatrix,  
-  squareRotation,   
-  [1, 0, 1]); 
   ```
 
 在webgl的三维模拟中，一般来说每个模型都有独立的模型矩阵，控制其本身的变换，所有模型共享视图和投影矩阵，模拟出真实世界里物体和摄像机的运动形式。
