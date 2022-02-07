@@ -1,6 +1,4 @@
-# webGl-Webpack-Template
-
-a template of webpack config for learning webGl
+# webGl MDN example & study note
 
 ## Usage
 
