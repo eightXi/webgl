@@ -1,4 +1,4 @@
-# webgl基础概念
+# webgl基础概览
 WebGL仅仅是一个光栅化引擎，它可以根据你的代码绘制出点，线和三角形。 想要利用WebGL完成更复杂任务，取决于你能否提供合适的代码，组合使用点，线和三角形代替实现。
 
 webgl代码需要提供成对的方法。每对方法中一个叫顶点着色器， 另一个叫片元着色器，并且使用一种和C或C++类似的强类型的语言 GLSL。 每一对组合起来称作一个 program（着色程序）。
@@ -7,67 +7,38 @@ webgl代码需要提供成对的方法。每对方法中一个叫顶点着色器
 
 WebGL只关心两件事：裁剪空间中的坐标值和颜色值。使用WebGL只需要给它提供这两个东西。 你需要提供两个着色器来做这两件事，一个顶点着色器提供裁剪空间坐标值，一个片元着色器提供颜色值。
 
+# glsl
+GLSL全称是 Graphics Library Shader Language （图形库着色器语言），是着色器使用的语言。 它有一些不同于JavaScript的特性，主要目的是为栅格化图形提供常用的计算功能。 
 
-# webgl获取数据
-对于想要绘制的每一个对象，都需要先设置一系列状态值，然后通过调用 gl.drawArrays 或 gl.drawElements 运行一个着色方法对，使得你的着色器对能够在GPU上运行。
+glsl内建的数据类型例如vec2, vec3和 vec4分别代表两个值，三个值和四个值， 类似的还有mat2, mat3 和 mat4 分别代表 2x2, 3x3 和 4x4 矩阵。
 
-这些方法对所需的任何数据都需要由以下方法发送到GPU
-- attribute
+可用来做一些运算例如常量和矢量的乘法，其为矢量数据提供了多种分量选择器
+```
+vec4 v
 
-  attribute只能用于顶点着色器，用来存储顶点着色器中每个顶点的输入，包括顶点位置坐标、纹理坐标和颜色等信息。
+v.x = v.s = v.r = v[0]
+v.y = v.t = v.g = v[1]
+v.z = v.p = v.b = v[2]
+v.w = v.q = v.a = v[3]
+```
+可详见[glsl规范](https://www.khronos.org/files/opengles_shading_language.pdf)
 
-  通常情况下我们会使用缓冲，缓冲是程序发送给GPU的数据，attribute用来从缓冲中获取所需数据，并将它提供给顶点着色器。程序可以指定每次顶点着色器运行时读取缓冲的规则。
+glsl语言内置5个内置变量，所谓内置变量即为不用声明就可以赋值的变量，主要作用为实现特定的功能
 
-  ```
-  const positionBuffer = gl.createBuffer(); //创建缓冲对象
+| 内置变量 | 含义 | 值数据类型 |
+| :------ | :--- | :-------- |
+| gl_PointSize | 点渲染模式，方形点区域渲染像素大小 | float |
+| gl_Position | 顶点位置坐标 | vec4 |
+| gl_FragColor | 片元颜色值 | vec4 |
+| gl_FragCoord | 片元坐标，单位像素 | vec2 |
+| gl_PointCoord | 点渲染模式对应点像素坐标 | vec2 |
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);  //绑定缓冲对象
-  gl.bufferData(gl.ARRAY_BUFFER,   // 用缓冲数据填充缓冲对象
-                  new Float32Array(vertices),
-                  gl.STATIC_DRAW); // static_draw指定数据存储区的使用方法 
-                                  // 缓冲区的内容可能经常使用，而不会经常更改。
-
-  // 绑定attribute
-  vertexPosition: gl.getAttribLocation(program, 'aVertexPosition'),
-
-  // 设置缓冲读取规则和启用缓冲对象
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-  gl.vertexAttribPointer(  // 告诉显卡从当前绑定的缓冲区（bindBuffer()指定的缓冲区）中读取顶点数据
-      programInfo.attribLocations.vertexPosition,
-      numComponents,
-      type,
-      normalize,
-      stride,
-      offset);
-  gl.enableVertexAttribArray(  // 打开属性数组列表中指定索引处的通用顶点属性数组
-      programInfo.attribLocations.vertexPosition);
-  ```
-- uniform（全局变量）
-
-  uniform可以存在顶点着色器和片元着色器，在着色程序运行前赋值，在运行过程中全局有效。通常用来存储图元处理过程中保持不变的值，例如颜色。
-
-  ```
-  // 绑定uniform
-  projectionMatrix: gl.getUniformLocation(program, 'uProjectionMatrix')
-  // 设置uniform
-  gl.uniformMatrix4fv(
-      programInfo.uniformLocations.projectionMatrix,
-      false,
-      projectionMatrix);
-  ```
-
-  uniform有很多类型，不同的类型设置方法不同，表现为gl.uniform?f?或gl.uniform?i?（v代表接收单个或者数组）
-
-- varyings（可变量）
-
-  用于顶点着色器给片元着色器传值，依照渲染的图元是点， 线还是三角形，顶点着色器中设置的可变量会在片元着色器运行中获取不同的插值。
-
-  通常是将缓冲区获取到的attribute转换为varyings传递给片元着色器，达到片元着色器接受可变数据的目的
-- textures(纹理)
-
-  纹理是一个数据序列，可以在着色程序运行中随意读取其中的数据。 大多数情况存放的是图像数据，但是纹理仅仅是数据序列， 你也可以随意存放除了颜色数据以外的其它数据。
+glsl语言声明变量方式与c语言类似，比如使用int声明整型变量，float声明浮点变量。不过着色器语言还提供了三个关键字attribute、uniform和varying用来声明特定用途的变量。其中attribute、uniform用于js向着色器传值，varying用于顶点着色器向片元着色器传值。
 
 # webgl着色器
+使用glsl语言编写webgl着色器代码
+
+### 顶点着色器
 一个顶点着色器的工作是生成裁剪空间坐标值
 
 每个顶点调用一次（顶点）着色器，每次调用都需要设置一个特殊的全局变量gl_Position， 该变量的值就是裁减空间坐标值。裁剪空间范围永远为-1到1
@@ -86,6 +57,7 @@ void main() {
 }
 ```
 
+### 片元着色器
 一个片元着色器的工作是为当前光栅化的像素提供颜色值
 
 每个像素都将调用一次片断着色器，每次调用需要从设置的特殊全局变量gl_FragColor中获取颜色信息。
@@ -99,21 +71,67 @@ void main(){
 }
 ```
 
-# glsl
-GLSL全称是 Graphics Library Shader Language （图形库着色器语言），是着色器使用的语言。 它有一些不同于JavaScript的特性，主要目的是为栅格化图形提供常用的计算功能。 
+# webgl数据传递
+webgl对于想要绘制的每一个对象，都需要先设置一系列状态值，然后通过调用 gl.drawArrays 或 gl.drawElements 运行一个着色方法对，使得你的着色器对能够在GPU上运行。
 
-glsl内建的数据类型例如vec2, vec3和 vec4分别代表两个值，三个值和四个值， 类似的还有mat2, mat3 和 mat4 分别代表 2x2, 3x3 和 4x4 矩阵。
+这些方法对所需的任何数据都需要由以下方法发送到GPU
 
-可用来做一些运算例如常量和矢量的乘法，其为矢量数据提供了多种分量选择器
+### attribute
+
+attribute只能用于顶点着色器，用来存储顶点着色器中每个顶点的输入，包括顶点位置坐标、纹理坐标和颜色等信息。
+
+通常情况下我们会使用缓冲，缓冲是程序发送给GPU的数据，attribute用来从缓冲中获取所需数据，并将它提供给顶点着色器。程序可以指定每次顶点着色器运行时读取缓冲的规则。
+
 ```
-vec4 v
+const positionBuffer = gl.createBuffer(); //创建缓冲对象
 
-v.x = v.s = v.r = v[0]
-v.y = v.t = v.g = v[1]
-v.z = v.p = v.b = v[2]
-v.w = v.q = v.a = v[3]
+gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);  //绑定缓冲对象
+gl.bufferData(gl.ARRAY_BUFFER,   // 用缓冲数据填充缓冲对象
+                new Float32Array(vertices),
+                gl.STATIC_DRAW); // static_draw指定数据存储区的使用方法 
+                                // 缓冲区的内容可能经常使用，而不会经常更改。
+
+// 绑定attribute
+vertexPosition: gl.getAttribLocation(program, 'aVertexPosition'),
+
+// 设置缓冲读取规则和启用缓冲对象
+gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+gl.vertexAttribPointer(  // 告诉显卡从当前绑定的缓冲区（bindBuffer()指定的缓冲区）中读取顶点数据
+    programInfo.attribLocations.vertexPosition,
+    numComponents,
+    type,
+    normalize,
+    stride,
+    offset);
+gl.enableVertexAttribArray(  // 打开属性数组列表中指定索引处的通用顶点属性数组
+    programInfo.attribLocations.vertexPosition);
 ```
-可详见[glsl规范](https://www.khronos.org/files/opengles_shading_language.pdf)
+
+### uniform（全局变量）
+
+uniform可以存在顶点着色器和片元着色器，在着色程序运行前赋值，在运行过程中全局有效。通常用来存储图元处理过程中保持不变的值，例如颜色。
+
+```
+// 绑定uniform
+projectionMatrix: gl.getUniformLocation(program, 'uProjectionMatrix')
+// 设置uniform
+gl.uniformMatrix4fv(
+    programInfo.uniformLocations.projectionMatrix,
+    false,
+    projectionMatrix);
+```
+
+uniform有很多类型，不同的类型设置方法不同，表现为gl.uniform?f?或gl.uniform?i?（v代表接收单个或者数组）
+
+### varyings（可变量）
+
+用于顶点着色器给片元着色器传值，依照渲染的图元是点， 线还是三角形，顶点着色器中设置的可变量会在片元着色器运行中获取不同的插值。
+
+通常是将缓冲区获取到的attribute转换为varyings传递给片元着色器，达到片元着色器接受可变数据的目的
+
+### textures(纹理)
+
+纹理是一个数据序列，可以在着色程序运行中随意读取其中的数据。 大多数情况存放的是图像数据，但是纹理仅仅是数据序列， 你也可以随意存放除了颜色数据以外的其它数据。
 
 # webgl工作原理
 ```
@@ -121,6 +139,7 @@ const offset = 0;  // 开始
 const vertexCount = 4;  // 需要使用到多少个点
 gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);  // 三角带，需要控制点位置顺序
 ```
+
 <img src="https://saas-base.cdnjtzy.com/saas/intranet/20220118/54a20507899325591035587fbd9b0937.png" style="width: 600px; height: 200px"/>
 
 
@@ -136,84 +155,85 @@ WebGL在GPU上的工作基本上分为两部分，第一部分是将顶点转换
 
 引入投影矩阵、视图矩阵、模型矩阵3个概念进行3d真实场景模拟，通过在Vertex Shader中使用透视矩阵 * 视图矩阵 * 模型矩阵 * 顶点得出最终的顶点位置。
 
-- 模型矩阵
+### 模型矩阵
 
-  模型矩阵，顾名思义，就是顶点本身的变换矩阵，包括平移，缩放，旋转等
+模型矩阵，顾名思义，就是顶点本身的变换矩阵，包括平移，缩放，旋转等
 
-  ```
-  // 创建模型矩阵
-  const modelMatrix = mat4.create();
+```
+// 创建模型矩阵
+const modelMatrix = mat4.create();
 
-  mat4.identity(modelMatrix); // 创建单位矩阵
-  mat4.rotate(modelMatrix,    // 绕对应的轴进行旋转
-  modelMatrix,  
-  squareRotation,   
-  [1, 0, 1]); 
-  ```
+mat4.identity(modelMatrix); // 创建单位矩阵
+mat4.rotate(modelMatrix,    // 绕对应的轴进行旋转
+modelMatrix,  
+squareRotation,   
+[1, 0, 1]); 
+```
 
 
-- 视图矩阵
+### 视图矩阵
 
-  创建视图矩阵模拟摄像机
+创建视图矩阵模拟摄像机
 
-  在投影矩阵中我们设定视点在（0，0，0）点，所以我们需要在顶点交给投影矩阵处理之前，通过视图矩阵将顶点坐标转换到视点是（0，0，0）点的坐标系中。
+在投影矩阵中我们设定视点在（0，0，0）点，所以我们需要在顶点交给投影矩阵处理之前，通过视图矩阵将顶点坐标转换到视点是（0，0，0）点的坐标系中。
 
-  ```
-  // 创建视图矩阵
-  const viewMatrix = mat4.create();
-  const eye = [0, 0, 6];   //虚拟摄像机位置
-  const center = [0, 0, 0]; // 被观察目标所在的点 还可用来确定视线
-  const up = [0, 1, 0]; // 摄像机朝上的位置 确定视线所在的面
+```
+// 创建视图矩阵
+const viewMatrix = mat4.create();
+const eye = [0, 0, 6];   //虚拟摄像机位置
+const center = [0, 0, 0]; // 被观察目标所在的点 还可用来确定视线
+const up = [0, 1, 0]; // 摄像机朝上的位置 确定视线所在的面
 
-  mat4.lookAt(viewMatrix,
-      eye,
-      center,
-      up)
-  ```
+mat4.lookAt(viewMatrix,
+    eye,
+    center,
+    up)
+```
 
-- 投影矩阵
+### 投影矩阵
 
-  投影矩阵的作用是将图像从3D空间投影到2D空间，主要有2种投影方式，透视（Perspective）和 正交（Orthogonal）。它们的区别主要在于顶点在z轴上的远近是否会影响其在xy平面上投影的位置。正交的应用场合一般来说是2D UI渲染，透视则应用于3D物体渲染，通过透视投影可以形成远小近大的真实世界视觉效果
+投影矩阵的作用是将图像从3D空间投影到2D空间，主要有2种投影方式，透视（Perspective）和 正交（Orthogonal）。它们的区别主要在于顶点在z轴上的远近是否会影响其在xy平面上投影的位置。正交的应用场合一般来说是2D UI渲染，透视则应用于3D物体渲染，通过透视投影可以形成远小近大的真实世界视觉效果
 
-  首先激活深度比较
+首先激活深度比较
 
-  ```
-  gl.clearDepth(1.0);                 // 深度清除
-  gl.enable(gl.DEPTH_TEST);           // 激活深度比较，并且更新深度缓冲区
-  gl.depthFunc(gl.LEQUAL);            // 近点覆盖远点  z缓存越小越近  z缓存与z坐标相关但不相同
-  ```
+```
+gl.clearDepth(1.0);                 // 深度清除
+gl.enable(gl.DEPTH_TEST);           // 激活深度比较，并且更新深度缓冲区
+gl.depthFunc(gl.LEQUAL);            // 近点覆盖远点  z缓存越小越近  z缓存与z坐标相关但不相同
+```
 
-  使用glMatrix创建一个投影矩阵 [透视投影矩阵展示](https://webglfundamentals.org/webgl/frustum-diagram.html)
+使用glMatrix创建一个投影矩阵 [透视投影矩阵展示](https://webglfundamentals.org/webgl/frustum-diagram.html)
 
-  ```
-  // 创建一个透视矩阵，一个特殊的矩阵，即用于模拟相机中的透视失真。
-  // 视野是 45 度，有一个宽度/高度与画布显示大小匹配的比例
-  // 观察范围为距离相机 100 个单位和0.1 个单位之间的对象
+```
+// 创建一个透视矩阵，一个特殊的矩阵，即用于模拟相机中的透视失真。
+// 视野是 45 度，有一个宽度/高度与画布显示大小匹配的比例
+// 观察范围为距离相机 100 个单位和0.1 个单位之间的对象
 
-  const fieldOfView = 45 * Math.PI / 180;   // 弧度制
-  const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-  const zNear = 0.1;
-  const zFar = 100.0;
-  const projectionMatrix = mat4.create();
+const fieldOfView = 45 * Math.PI / 180;   // 弧度制
+const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+const zNear = 0.1;
+const zFar = 100.0;
+const projectionMatrix = mat4.create();
 
-  mat4.perspective(projectionMatrix,
-                    fieldOfView,
-                    aspect,
-                    zNear,
-                    zFar);
-  ```
+mat4.perspective(projectionMatrix,
+                  fieldOfView,
+                  aspect,
+                  zNear,
+                  zFar);
+```
 
 在webgl的三维模拟中，一般来说每个模型都有独立的模型矩阵，控制其本身的变换，所有模型共享视图和投影矩阵，模拟出真实世界里物体和摄像机的运动形式。
 <img src="https://saas-base.cdnjtzy.com/saas/intranet/20220119/c26c42350d78c06225e0e991a432502e.jpg" style="width: 700px; height=350px">
 
 # webgl纹理
+
 对一个几何图形进行贴图，所贴的图就叫纹理(texture)，或纹理图像(texture image)。贴图的过程叫做纹理映射。组成纹理图像的像素称为纹素(texels, texture elements)。光栅化时每个片元会涂上纹素
 
 纹理和光照一样，都是作用于世界坐标系的，不受投影和视图矩阵的影响
 
-纹理映射主要分为4步
+纹理映射主要步骤如下
 
-1.初始化纹理信息
+### 初始化纹理信息
 
 需要设置纹理坐标，通过buffer绑定对应属性
 
@@ -239,7 +259,7 @@ gl.bufferData(gl.ARRAY_BUFFER,
 );  // 通过buffer绑定对应属性
 ```
 
-2.加载纹理图像
+### 加载纹理图像
 
 使用js加载对应的纹理图像，加载的图像不能对canvas造成污染，即需要遵循跨域策略
 ```
@@ -250,7 +270,7 @@ image.onload = function() {
 }
 ```
 
-3.配置并使用纹理
+### 配置并使用纹理
 
 首先需要创建纹理对象，进行激活，随后将其绑定到gl.TEXTURE_2D上、
 
@@ -301,7 +321,7 @@ if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
 }
 ```
 
-4.将纹理单元传递给着色器进行处理
+### 将纹理单元传递给着色器进行处理
 
 ```
 uSampler: gl.getUniformLocation(program, 'uSampler'),
@@ -310,7 +330,7 @@ uSampler: gl.getUniformLocation(program, 'uSampler'),
 gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
 ```
 
-5.着色器处理
+### 着色器处理
 
 ```
 varying highp vec2 vTextureCoord;
@@ -358,6 +378,7 @@ void main(void) {
 
   注意光线方向指的入射光的反方向，即从入射点指向光源方向
   <img src="https://saas-base.cdnjtzy.com/saas/intranet/20220119/d98f2193ba0ac8a7fce63e8754aafbdb.png" style="width: 420px; height: 280px">
+
 
 综合可知 物体最终被观察到的颜色为
 
